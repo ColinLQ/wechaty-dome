@@ -1,0 +1,81 @@
+const { Wechaty } = require('wechaty');
+const { getWeather, getReply, getOne } = require('./superagent');
+const schedule = require('node-schedule')
+
+const bot = new Wechaty();
+bot.on('scan', onScan)
+bot.on('login', onLogin)
+bot.on('message', onMessage)
+bot.start();
+
+let qrcodeImageUrl;
+
+function onScan(qrcode) {
+  require('qrcode-terminal').generate(qrcode, { small: true })  // 在console端显示二维码
+  qrcodeImageUrl = [
+    'https://api.qrserver.com/v1/create-qr-code/?data=',
+    encodeURIComponent(qrcode),
+    '&size=220x220&margin=20',
+  ].join('');
+  console.log(qrcodeImageUrl); // 二维码地址
+}
+
+function onLogin(user) {
+  console.log(`User ${user} login`);
+  main();
+}
+
+async function onMessage(msg) {
+  const contact = msg.from() // 发消息人
+  const content = msg.text() //消息内容
+  const room = msg.room() //是否是群消息
+
+  if (!room) {
+    let reply;
+
+    if (/每日一句/.test(content)) {
+      reply = await getOne();
+    } else if (content.indexOf('天气') !== -1) {
+      reply = await getWeather(content.slice(0, content.indexOf('天气')))
+    } else if (!msg.self()) {
+      reply = await getReply(content);
+    }
+
+    reply && await contact.say(reply);
+  }
+}
+
+function main() {
+  const NAME = 'self';
+  const NICKNAME = '²⁰¹⁹';
+
+  // 每分钟的第30秒触发： '30 * * * * *'
+  //
+  // 每小时的1分30秒触发 ：'30 1 * * * *'
+  //
+  // 每天的凌晨1点1分30秒触发 ：'30 1 1 * * *'
+  //
+  // 每月的1日1点1分30秒触发 ：'30 1 1 1 * *'
+  //
+  // 每周1的1点1分30秒触发 ：'30 1 1 * * 1'
+
+  schedule.scheduleJob('0 0 7 * * *', send)
+
+  async function send() {
+    const one = await getOne();
+    const weather = await getWeather('广州');
+
+    const msg = `${weather}<br/>每日一句：${one}`;
+    const contact = await bot.Contact.find({ name: NICKNAME }) || await bot.Contact.find({ alias: NAME });
+    contact.say(msg);
+  }
+}
+
+const Koa = require('koa');
+const app = new Koa();
+
+app.use(ctx => {
+  ctx.body = `<img src="${qrcodeImageUrl}"/>`;
+});
+
+app.listen(3000);

@@ -1,0 +1,5 @@
+module.exports = {
+  ONE: 'http://wufazhuce.com/', //ONE的web版网站
+  AIBOTAPI: 'http://www.tuling123.com/openapi/api', //图灵机器人API 注册地址http://www.turingapi.com/
+  APIKEY: 'apikey', //图灵机器人apikey
+}

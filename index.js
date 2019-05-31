@@ -45,9 +45,20 @@ async function onMessage(msg) {
   }
 }
 
+const scheduleMsg = [
+  {
+    userName: 'self',
+    nickName: '²⁰¹⁹',
+    location: '广州',
+  },
+  {
+    userName: '朱盈',
+    nickName: '小雀儿的幸运',
+    location: '岳麓',
+  }
+]
+
 function main() {
-  const NAME = 'self';
-  const NICKNAME = '²⁰¹⁹';
 
   // 每分钟的第30秒触发： '30 * * * * *'
   //
@@ -63,11 +74,14 @@ function main() {
 
   async function send() {
     const one = await getOne();
-    const weather = await getWeather('广州');
 
-    const msg = `${weather}<br/>每日一句：${one}`;
-    const contact = await bot.Contact.find({ name: NICKNAME }) || await bot.Contact.find({ alias: NAME });
-    contact.say(msg);
+    scheduleMsg.forEach(async item => {
+      const { userName, nickName, location } = item;
+      const weather = await getWeather(location);
+      const msg = `${weather}<br/>每日一句：${one}`;
+      const contact = await bot.Contact.find({ name: nickName }) || await bot.Contact.find({ alias: userName });
+      contact.say(msg);
+    })
   }
 }
 
@@ -78,4 +92,4 @@ app.use(ctx => {
   ctx.body = `<img src="${qrcodeImageUrl}"/>`;
 });
 
-app.listen(3000);
+app.listen(4000);

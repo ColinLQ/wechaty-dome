@@ -1,5 +1,5 @@
 const { request } = require('../utils')
-const { ONE, AIBOTAPI, APIKEY } = require('../config/index')
+const { ONE } = require('../config/index')
 const cheerio = require('cheerio')
 
 
@@ -27,20 +27,7 @@ async function getWeather(str) {
   return '对不起，没找到对应城市。'
 }
 
-
-async function getReply(word) { // 青云api，智能聊天机器人
-  let url = AIBOTAPI
-  let res = await request(url, 'GET', { key: APIKEY, info: word })
-  let content = JSON.parse(res.text)
-  if (content.code === 100000) {
-    return content.text
-  } else {
-    return '我好像迷失在无边的网络中了，你能找回我么？'
-  }
-}
-
 module.exports = {
   getOne,
   getWeather,
-  getReply
 }

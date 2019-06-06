@@ -1,5 +1,5 @@
 const { Wechaty } = require('wechaty');
-const { getWeather, getReply, getOne } = require('./superagent');
+const { getWeather, getOne } = require('./superagent');
 const schedule = require('node-schedule')
 
 const bot = new Wechaty();
@@ -9,6 +9,9 @@ bot.on('message', onMessage)
 bot.start();
 
 let qrcodeImageUrl;
+
+const contactQueue = [];
+let prevContact = null;
 
 function onScan(qrcode) {
   require('qrcode-terminal').generate(qrcode, { small: true })  // 在console端显示二维码
@@ -25,10 +28,23 @@ function onLogin(user) {
   main();
 }
 
+let timer = null;
+
 async function onMessage(msg) {
   const contact = msg.from() // 发消息人
-  const content = msg.text() //消息内容
+  let content = msg.text() //消息内容
   const room = msg.room() //是否是群消息
+
+  if (contact.payload.name === '小冰' && contact.payload.signature === '我是人工智能微软小冰~~') {
+    clearTimeout(timer);
+    const contact = contactQueue.shift() || prevContact;
+    if (contact) {
+      contact.say(content);
+      prevContact = contact;
+      timer = setTimeout(() => prevContact = null, 10000);
+    }
+    return;
+  }
 
   if (!room) {
     let reply;
@@ -38,11 +54,21 @@ async function onMessage(msg) {
     } else if (content.indexOf('天气') !== -1) {
       reply = await getWeather(content.slice(0, content.indexOf('天气')))
     } else if (!msg.self()) {
-      reply = await getReply(content);
+      getReply(content);
+      contactQueue.push(contact);
     }
 
     reply && await contact.say(reply);
   }
+}
+
+let xbContact = null;
+
+async function getReply(word) {
+  if (!xbContact) {
+    xbContact = await bot.Contact.find({ name: '小冰' }) || await bot.Contact.find({ alias: '小冰' });
+  }
+  xbContact.say(word);
 }
 
 const scheduleMsg = [

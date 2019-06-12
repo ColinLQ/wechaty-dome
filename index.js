@@ -5,10 +5,12 @@ const schedule = require('node-schedule')
 const bot = new Wechaty();
 bot.on('scan', onScan)
 bot.on('login', onLogin)
+bot.on('logout', onLogout)
 bot.on('message', onMessage)
 bot.start();
 
 let qrcodeImageUrl;
+let xbContact = null;
 
 const contactQueue = [];
 let prevContact = null;
@@ -26,6 +28,14 @@ function onScan(qrcode) {
 function onLogin(user) {
   console.log(`User ${user} login`);
   main();
+}
+
+function onLogout() {
+  qrcodeImageUrl = '';
+  prevContact = null;
+  contactQueue.splice(0, contactQueue.length);
+  xbContact = null;
+  clearTimeout(timer);
 }
 
 let timer = null;
@@ -61,8 +71,6 @@ async function onMessage(msg) {
     reply && await contact.say(reply);
   }
 }
-
-let xbContact = null;
 
 async function getReply(word) {
   if (!xbContact) {
